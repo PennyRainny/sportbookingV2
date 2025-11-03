@@ -59,10 +59,15 @@ export default function LoginPage() {
   }, []);
 
   const redirectToLINE = () => {
-    const clientId = process.env.NEXT_PUBLIC_LINE_CLIENT_ID!;
-    const redirectUri = encodeURIComponent(process.env.NEXT_PUBLIC_LINE_REDIRECT_URI!);
-    const state = "secure_random_state"; // หรือ generate แบบ random
+    const clientId = process.env.NEXT_PUBLIC_LINE_CLIENT_ID;
+    const redirectUri = encodeURIComponent(process.env.NEXT_PUBLIC_LINE_REDIRECT_URI || "");
+    const state = "secure_random_state";
     const scope = "profile openid";
+
+    if (!clientId || clientId === "undefined") {
+      alert("LINE Client ID is missing. Please check your environment variables.");
+      return;
+    }
 
     const lineUrl = `https://access.line.me/oauth2/v2.1/authorize?response_type=code&client_id=${clientId}&redirect_uri=${redirectUri}&state=${state}&scope=${scope}&prompt=login`;
     window.location.href = lineUrl;
