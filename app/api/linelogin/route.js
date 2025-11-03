@@ -6,6 +6,7 @@ export async function POST(req) {
   try {
     const { code } = await req.json();
     if (typeof code !== "string" || !code.trim()) {
+      console.error("Missing or invalid code:", code);
       return NextResponse.json({ error: "Missing or invalid code" }, { status: 400 });
     }
 
@@ -59,21 +60,26 @@ export async function POST(req) {
     console.log("LINE profile raw:", profile);
 
     const { userId, displayName, pictureUrl } = profile;
-    if (!userId || !displayName || !pictureUrl) {
+    if (!userId || !displayName) {
       console.error("Invalid profile data:", profile);
       return NextResponse.json({ error: "Invalid profile data" }, { status: 422 });
     }
 
     // 📝 Save to Firestore
-    const safeUser = {
-      lineId: userId,
-      nameUser: displayName,
-      picture: pictureUrl,
-      timeDateLogin: serverTimestamp(),
-    };
-    await setDoc(doc(db, "users", userId), safeUser);
+    try {
+      const safeUser = {
+        lineId: userId,
+        nameUser: displayName,
+        picture: pictureUrl || "",
+        timeDateLogin: serverTimestamp(),
+      };
+      await setDoc(doc(db, "users", userId), safeUser);
+    } catch (firestoreErr) {
+      console.error("Firestore error:", firestoreErr);
+      return NextResponse.json({ error: "Failed to save user" }, { status: 500 });
+    }
 
-    return NextResponse.json({ userId, displayName, pictureUrl });
+    return NextResponse.json({ userId, displayName, pictureUrl: pictureUrl || "" });
   } catch (err) {
     console.error("LINE Login Error:", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
