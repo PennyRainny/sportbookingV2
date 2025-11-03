@@ -1,16 +1,15 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
-import styles from "./login.module.css"; // ใช้ CSS UI ที่คุณทำไว้
+import styles from "./login.module.css";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const { login } = useAuth(); // ถ้ามี context สำหรับ login
+  const { login } = useAuth();
 
   // บันทึก user ลง Firebase
   const saveUserToFirebase = async (lineId: string, name: string) => {
@@ -26,31 +25,43 @@ export default function LoginPage() {
     }
   };
 
-  const handleLineLogin = async () => {
-    setLoading(true);
-    try {
-      // TODO: เชื่อม LINE SDK จริง ๆ
-      // ตอนนี้เป็นตัวอย่าง ใช้ค่า static
-      const lineId = "USER_LINE_ID"; 
-      const name = "User Name";
+  // ดึง code จาก URL แล้วเรียก /api/linelogin
+  useEffect(() => {
+    const code = new URL(window.location.href).searchParams.get("code");
+    if (code) {
+      setLoading(true);
 
-      // บันทึกผู้ใช้ลง Firebase
-      await saveUserToFirebase(lineId, name);
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 7000); // timeout 7s
 
-      // login local/context ถ้ามี
-      login(lineId, "", "user");
-
-      router.push("/home");
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
+      fetch("/api/linelogin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code }),
+        signal: controller.signal,
+      })
+        .then(res => res.json())
+        .then(async data => {
+          if (data?.userId && data?.displayName) {
+            await saveUserToFirebase(data.userId, data.displayName);
+            login(data.userId, "", "user");
+            router.push("/home");
+          } else {
+            router.push("/login?error=invalid_profile");
+          }
+        })
+        .catch(() => {
+          router.push("/login?error=timeout");
+        })
+        .finally(() => {
+          clearTimeout(timeout);
+          setLoading(false);
+        });
     }
-  };
+  }, []);
 
   return (
     <div className={styles.pageWrapper}>
-      {/* Background */}
       <div
         className={styles.bgBlur}
         style={{
@@ -60,7 +71,6 @@ export default function LoginPage() {
       />
       <div className={styles.bgGradientOverlay} />
 
-      {/* Glass Card */}
       <div className={styles.glassCard}>
         <div className={styles.logoWrapper}>
           <div className={styles.logoCircle}>
@@ -71,28 +81,10 @@ export default function LoginPage() {
         <h1 className={styles.title}>SPU Sport Booking</h1>
         <p className={styles.subtitle}>Book your favorite sports field easily.</p>
 
-        {/* ปุ่ม LINE Login */}
-        <Button
-          onClick={handleLineLogin}
-          disabled={loading}
-          variant="default"
-          size="lg"
-          className={styles.lineButton}
-        >
-          {loading ? (
-            <>
-              <Loader2 className={styles.loaderIcon} />
-              Connecting to LINE…
-            </>
-          ) : (
-            <>
-              <svg className={styles.lineIcon} viewBox="0 0 24 24" fill="currentColor">
-                <path d="M19.365 9.863c... (same path)" />
-              </svg>
-              Login with LINE
-            </>
-          )}
-        </Button>
+        <button className={styles.lineButton} disabled>
+          <Loader2 className={styles.loaderIcon} />
+          {loading ? "Connecting to LINE…" : "Waiting for LINE redirect…"}
+        </button>
 
         <p className={styles.loginNote}>Login via your LINE account to continue.</p>
       </div>
