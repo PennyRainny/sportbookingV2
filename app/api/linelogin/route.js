@@ -4,7 +4,9 @@ import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 
 export async function POST(req) {
   try {
+    console.time("Parse body");
     const { code } = await req.json();
+    console.timeEnd("Parse body");
 
     if (typeof code !== "string" || !code.trim()) {
       return NextResponse.json({ error: "Missing or invalid code" }, { status: 400 });
@@ -22,7 +24,7 @@ export async function POST(req) {
       return NextResponse.json({ error: "Missing LINE environment variables" }, { status: 500 });
     }
 
-    // 1. แลก code เป็น access token
+    console.time("Fetch LINE token");
     const tokenRes = await fetch("https://api.line.me/oauth2/v2.1/token", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -34,24 +36,28 @@ export async function POST(req) {
         client_secret: clientSecret,
       }),
     });
+    console.timeEnd("Fetch LINE token");
 
+    console.time("Parse token response");
     const tokenData = await tokenRes.json();
-    const accessToken = tokenData?.access_token;
+    console.timeEnd("Parse token response");
 
+    const accessToken = tokenData?.access_token;
     if (typeof accessToken !== "string" || !accessToken.trim()) {
       return NextResponse.json({ error: "Failed to get access token" }, { status: 401 });
     }
 
-    // 2. ดึงข้อมูล profile
+    console.time("Fetch LINE profile");
     const profileRes = await fetch("https://api.line.me/v2/profile", {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
+    console.timeEnd("Fetch LINE profile");
 
+    console.time("Parse profile response");
     const profile = await profileRes.json();
+    console.timeEnd("Parse profile response");
 
-    // 3. ตรวจสอบข้อมูลก่อนเขียน
     const { userId, displayName, pictureUrl } = profile;
-
     if (
       typeof userId !== "string" ||
       typeof displayName !== "string" ||
@@ -60,15 +66,15 @@ export async function POST(req) {
       return NextResponse.json({ error: "Invalid profile data" }, { status: 422 });
     }
 
-    // 4. เขียนลง Firestore แบบปลอดภัย
+    console.time("Write to Firestore");
     const safeUser = {
       lineId: userId,
       nameUser: displayName,
       picture: pictureUrl,
       timeDateLogin: serverTimestamp(),
     };
-
     await setDoc(doc(db, "users", userId), safeUser);
+    console.timeEnd("Write to Firestore");
 
     return NextResponse.json(profile);
   } catch (err) {
