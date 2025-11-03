@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/firebase";
-import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
 
 export async function POST(req) {
   try {
@@ -65,21 +65,26 @@ export async function POST(req) {
       return NextResponse.json({ error: "Invalid profile data" }, { status: 422 });
     }
 
-    // 📝 Save to Firestore
-    try {
-      const safeUser = {
-        lineId: userId,
-        nameUser: displayName,
-        picture: pictureUrl || "",
-        timeDateLogin: serverTimestamp(),
-      };
-      await setDoc(doc(db, "users", userId), safeUser);
-    } catch (firestoreErr) {
-      console.error("Firestore error:", firestoreErr);
-      return NextResponse.json({ error: "Failed to save user" }, { status: 500 });
+    // 📝 Generate unique document ID based on displayName
+    let docId = displayName;
+    let suffix = 1;
+    while (true) {
+      const existing = await getDoc(doc(db, "users", docId));
+      if (!existing.exists()) break;
+      docId = `${displayName}-${String(suffix).padStart(2, "0")}`;
+      suffix++;
     }
 
-    return NextResponse.json({ userId, displayName, pictureUrl: pictureUrl || "" });
+    const safeUser = {
+      username: displayName,
+      lineId: userId,
+      picture: pictureUrl || "",
+      date: serverTimestamp(),
+    };
+
+    await setDoc(doc(db, "users", docId), safeUser);
+
+    return NextResponse.json({ docId, ...safeUser });
   } catch (err) {
     console.error("LINE Login Error:", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
