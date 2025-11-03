@@ -8,14 +8,14 @@ import { BookingProvider } from "@/contexts/BookingContext";
 import { Toaster } from "@/components/ui/sonner";
 
 // ------------------------------
-// ฟอนต์จาก public/fonts
+// ฟอนต์จาก app/fonts
 // ------------------------------
 const geistSans = localFont({
   src: [
-    { path: "/fonts/Geist/otf/Geist-Regular.otf", weight: "400" },
-    { path: "/fonts/Geist/otf/Geist-Medium.otf", weight: "500" },
-    { path: "/fonts/Geist/otf/Geist-Bold.otf", weight: "700" },
-    { path: "/fonts/Geist/otf/Geist-Black.otf", weight: "900" },
+    { path: "./fonts/Geist/otf/Geist-Regular.otf", weight: "400" },
+    { path: "./fonts/Geist/otf/Geist-Medium.otf", weight: "500" },
+    { path: "./fonts/Geist/otf/Geist-Bold.otf", weight: "700" },
+    { path: "./fonts/Geist/otf/Geist-Black.otf", weight: "900" },
   ],
   variable: "--font-geist-sans",
   display: "swap",
@@ -23,9 +23,9 @@ const geistSans = localFont({
 
 const geistMono = localFont({
   src: [
-    { path: "/fonts/GeistMono/otf/GeistMono-Regular.otf", weight: "400" },
-    { path: "/fonts/GeistMono/otf/GeistMono-Medium.otf", weight: "500" },
-    { path: "/fonts/GeistMono/otf/GeistMono-Bold.otf", weight: "700" },
+    { path: "./fonts/GeistMono/otf/GeistMono-Regular.otf", weight: "400" },
+    { path: "./fonts/GeistMono/otf/GeistMono-Medium.otf", weight: "500" },
+    { path: "./fonts/GeistMono/otf/GeistMono-Bold.otf", weight: "700" },
   ],
   variable: "--font-geist-mono",
   display: "swap",

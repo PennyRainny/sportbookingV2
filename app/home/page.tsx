@@ -70,7 +70,7 @@ export default function HomePage() {
               <div key={facility.id} className={styles.facilityCard}>
                 <div className={styles.cardImageWrapper}>
                   <img src={facility.image} alt={facility.name} className={styles.cardImage} />
-                  {facility.status === 'available' && (
+                  {facility.status === 'open' && (
                     <span className={styles.statusTag}>Available</span>
                   )}
                 </div>
