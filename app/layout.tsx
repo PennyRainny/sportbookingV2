@@ -5,7 +5,7 @@ import "./globals.css";
 // ✅ Context และ Toaster เป็น client component
 import { AuthProvider } from "@/contexts/AuthContext";
 import { BookingProvider } from "@/contexts/BookingContext";
-import { Toaster } from "@/components/ui/sonner"; // ตรวจสอบว่าชื่อไฟล์ export ชื่อ Toaster
+import { Toaster } from "@/components/ui/sonner"; 
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -18,7 +18,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SPU Sport Booking",
+  title: "SPU Sport Home",
   description: "Facility booking system for SPU students and staff",
 };
 

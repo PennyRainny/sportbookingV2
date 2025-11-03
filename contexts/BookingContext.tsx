@@ -27,7 +27,7 @@ export interface Booking {
 interface BookingContextType {
   facilities: Facility[];
   bookings: Booking[];
-  addBooking: (booking: Omit<Booking, 'id' | 'createdAt' | 'status'>) => void;
+  addBooking: (booking: Omit<Booking, 'id' | 'createdAt'>) => void; // ✅ status ไม่ถูก omit แล้ว
   updateBookingStatus: (bookingId: string, status: 'approved' | 'pending' | 'cancelled') => void;
   getUserBookings: (userId: string) => Booking[];
   getBookingById: (bookingId: string) => Booking | undefined;
@@ -36,7 +36,7 @@ interface BookingContextType {
 const BookingContext = createContext<BookingContextType | undefined>(undefined);
 
 const initialFacilities: Facility[] = [
-  {
+   {
     id: 'f1',
     name: 'Main Football Field',
     type: 'football',
@@ -75,6 +75,8 @@ const initialFacilities: Facility[] = [
 ];
 
 export const BookingProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const facilityF1 = initialFacilities.find(f => f.id === 'f1');
+  const facilityF2 = initialFacilities.find(f => f.id === 'f2');
   const [facilities] = useState<Facility[]>(initialFacilities);
   const [bookings, setBookings] = useState<Booking[]>([
     {
@@ -101,14 +103,15 @@ export const BookingProvider: React.FC<{ children: ReactNode }> = ({ children })
     },
   ]);
 
-  const addBooking = (booking: Omit<Booking, 'id' | 'createdAt' | 'status'>) => {
+  // ✅ status รับจากภายนอก ถ้าไม่ใส่ จะ default เป็น 'pending'
+  const addBooking = (booking: Omit<Booking, 'id' | 'createdAt'>) => {
     const newBooking: Booking = {
       ...booking,
       id: 'b' + Date.now(),
       createdAt: new Date().toISOString(),
-      status: 'pending',
+      status: booking.status ?? 'pending',
     };
-    setBookings([...bookings, newBooking]);
+    setBookings((prev) => [...prev, newBooking]);
   };
 
   const updateBookingStatus = (bookingId: string, status: 'approved' | 'pending' | 'cancelled') => {

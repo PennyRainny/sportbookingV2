@@ -26,7 +26,7 @@ export const Header: React.FC = () => {
           className="cursor-pointer"
           onClick={() => router.push('/home')} // ✅ แก้จาก navigate('/home')
         >
-          <h2 style={{ color: '#6B8AFF' }}>SPU Sport Booking</h2>
+          <h2 style={{ color: '#6B8AFF' }}>SPU Sport </h2>
         </div>
         <div className="flex items-center gap-4">
           {user && (

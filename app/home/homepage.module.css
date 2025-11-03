@@ -1,0 +1,193 @@
+.pageWrapper {
+  min-height: 100vh;
+  background: linear-gradient(to bottom right, #eff6ff, #ffe4e6, #f3e8ff);
+}
+
+.main {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.welcomeSection {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.title {
+  font-size: 1.875rem;
+  font-weight: bold;
+  color: #6B8AFF;
+  margin-bottom: 1rem;
+}
+
+.subtitle {
+  color: #4B5563;
+}
+
+.selectorSection {
+  margin-bottom: 3rem;
+}
+
+.selectorTitle {
+  text-align: center;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+}
+
+.selectorButtons {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.sportButton {
+  border-radius: 0.75rem;
+  padding: 1.5rem 2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: transform 0.2s ease;
+}
+
+.sportButton:hover {
+  transform: scale(1.05);
+}
+
+.activeSport {
+  background-color: #6B8AFF;
+  color: white;
+}
+
+.inactiveSport {
+  background-color: #E5E7EB;
+  color: #374151;
+}
+
+.bookingsSection {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 3rem;
+}
+
+.bookingsButton {
+  border-radius: 0.75rem;
+  padding: 1.5rem 2rem;
+  background-color: #FFC7D3;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: transform 0.2s ease;
+}
+
+.bookingsButton:hover {
+  transform: scale(1.05);
+}
+
+.facilitySection {
+  margin-bottom: 2rem;
+}
+
+.facilityTitle {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+}
+
+.facilityGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+  align-items: stretch;
+}
+
+@media (max-width: 768px) {
+  .facilityGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.facilityCard {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background-color: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 1rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  min-height: 420px;
+  padding: 1rem;
+}
+
+.cardImageWrapper {
+  position: relative;
+  width: 100%;
+  height: 180px;
+  margin-bottom: 1rem;
+}
+
+.cardImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 0.75rem;
+}
+
+.statusTag {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background-color: #6B8AFF;
+  color: white;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.5rem;
+}
+
+.cardContent {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.cardTitle {
+  font-size: 1rem;
+  font-weight: bold;
+  margin-bottom: 0.25rem;
+}
+
+.cardType {
+  font-size: 0.875rem;
+  color: #6B7280;
+  margin-bottom: 1.5rem;
+}
+
+.cardButton {
+  background-color: #6B8AFF;
+  color: white;
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  text-align: center;
+  transition: background-color 0.3s ease;
+}
+
+.cardButton:hover {
+  background-color: #5578e6;
+}
+
+.noFacilities {
+  text-align: center;
+  padding: 3rem 0;
+  color: #6B7280;
+}
+
+.icon {
+  width: 20px;
+  height: 20px;
+}

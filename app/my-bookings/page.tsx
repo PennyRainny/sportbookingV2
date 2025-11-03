@@ -1,172 +1,77 @@
 'use client';
 
-import React, { useState } from 'react';
-import { AdminSidebar } from '@/components/AdminSidebar';
+import React from 'react';
+import { useRouter } from 'next/navigation';
+import { Header } from '@/components/Header';
 import { useBooking } from '@/contexts/BookingContext';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Check, X, Search } from 'lucide-react';
-import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
+import { CalendarX, CalendarDays, Clock } from 'lucide-react';
+import styles from './mybooking.module.css';
 
-export default function ManageBookingsPage() {
-  const { bookings, updateBookingStatus } = useBooking();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filterSport, setFilterSport] = useState<'all' | 'football' | 'basketball'>('all');
+export default function MyBookingsPage() {
+  const router = useRouter();
+  const { getUserBookings } = useBooking();
+  const { user } = useAuth();
 
-  const filteredBookings = bookings.filter((booking) => {
-    const matchesSearch =
-      booking.facilityName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      booking.id.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    return matchesSearch;
-  });
-
-  const statusColors = {
-    approved: '#6B8AFF',
-    pending: '#FFC7D3',
-    cancelled: '#BFA2FF',
-  };
-
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
-  };
-
-  const handleApprove = (bookingId: string, facilityName: string) => {
-    updateBookingStatus(bookingId, 'approved');
-    toast.success('Booking approved!', {
-      description: `Booking for ${facilityName} has been approved.`,
-    });
-  };
-
-  const handleCancel = (bookingId: string, facilityName: string) => {
-    updateBookingStatus(bookingId, 'cancelled');
-    toast.success('Booking cancelled!', {
-      description: `Booking for ${facilityName} has been cancelled.`,
-    });
-  };
+  const bookings = user ? getUserBookings(user.id) : [];
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <AdminSidebar />
+    <div className={styles.pageWrapper}>
+      <Header />
+      <main className={styles.mainContent}>
+        <h1 className={styles.pageTitle}>My Bookings</h1>
 
-      <main className="ml-64 p-8">
-        <div className="mb-8">
-          <h1 className="mb-2">Manage Bookings</h1>
-          <p className="text-gray-600">Review and manage all facility bookings.</p>
-        </div>
-
-        {/* Filters */}
-        <div className="flex gap-4 mb-6">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <Input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by booking ID or facility name..."
-              className="pl-10 rounded-xl"
-            />
+        {bookings.length === 0 ? (
+          <div className={styles.emptyBox}>
+            <CalendarX className={styles.emptyIcon} strokeWidth={1.5} />
+            <h2 className={styles.emptyTitle}>No Bookings Yet</h2>
+            <p className={styles.emptyText}>
+              You haven't made any bookings yet. Start by browsing available facilities!
+            </p>
+            <button
+              onClick={() => router.push('/home')}
+              className={styles.browseButton}
+            >
+              Browse Facilities
+            </button>
           </div>
-          <select
-            value={filterSport}
-            onChange={(e) => setFilterSport(e.target.value as any)}
-            className="px-4 py-2 border border-gray-300 rounded-xl"
-          >
-            <option value="all">All Sports</option>
-            <option value="football">Football</option>
-            <option value="basketball">Basketball</option>
-          </select>
-        </div>
-
-        {/* Bookings Table */}
-        <div className="bg-white rounded-2xl shadow-md overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Booking ID</TableHead>
-                <TableHead>User</TableHead>
-                <TableHead>Field</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Time</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredBookings.map((booking) => (
-                <TableRow key={booking.id}>
-                  <TableCell>{booking.id}</TableCell>
-                  <TableCell>{booking.userId}</TableCell>
-                  <TableCell>{booking.facilityName}</TableCell>
-                  <TableCell>{formatDate(booking.date)}</TableCell>
-                  <TableCell>{booking.time}</TableCell>
-                  <TableCell>
-                    <Badge
-                      style={{
-                        backgroundColor: statusColors[booking.status],
-                        color: 'white',
-                      }}
-                    >
-                      {booking.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      {booking.status === 'pending' && (
-                        <>
-                          <Button
-                            size="sm"
-                            className="rounded-xl"
-                            style={{ backgroundColor: '#6B8AFF' }}
-                            onClick={() => handleApprove(booking.id, booking.facilityName)}
-                          >
-                            <Check className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="rounded-xl text-red-600 border-red-600"
-                            onClick={() => handleCancel(booking.id, booking.facilityName)}
-                          >
-                            <X className="w-4 h-4" />
-                          </Button>
-                        </>
-                      )}
-                      {booking.status === 'approved' && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="rounded-xl text-red-600 border-red-600"
-                          onClick={() => handleCancel(booking.id, booking.facilityName)}
-                        >
-                          Cancel
-                        </Button>
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-          {filteredBookings.length === 0 && (
-            <div className="text-center py-12 text-gray-500">
-              No bookings found matching your criteria.
-            </div>
-          )}
-        </div>
+        ) : (
+          <div className={styles.bookingList}>
+            {bookings.map((booking) => (
+              <div
+                key={booking.id}
+                className={styles.card}
+                onClick={() => router.push(`/booking-detail/${booking.id}`)}
+              >
+                <img
+                  src={booking.facilityImage}
+                  alt={booking.facilityName}
+                  className={styles.image}
+                />
+                <div className={styles.details}>
+                  <h3 className={styles.name}>{booking.facilityName}</h3>
+                  <div className={styles.infoRow}>
+                    <CalendarDays className={styles.icon} />
+                    <span>
+                      {new Date(booking.date).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                      })}
+                    </span>
+                  </div>
+                  <div className={styles.infoRow}>
+                    <Clock className={styles.icon} />
+                    <span>{booking.time}</span>
+                  </div>
+                </div>
+                <div className={`${styles.status} ${styles[booking.status]}`}>
+                  {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </main>
     </div>
   );
