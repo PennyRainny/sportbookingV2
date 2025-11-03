@@ -1,0 +1,168 @@
+/* ===== Login / Register Shared Styles ===== */
+
+.pageWrapper {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, #7a00ff, #00c6ff);
+  overflow: hidden;
+  color: #fff;
+  font-family: "Poppins", sans-serif;
+}
+
+.bgBlur {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  filter: blur(20px);
+  z-index: 1;
+}
+
+.bgGradientOverlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.6), rgba(50, 0, 100, 0.6));
+  z-index: 2;
+}
+
+.glassCard {
+  position: relative;
+  z-index: 3;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 20px;
+  backdrop-filter: blur(15px);
+  padding: 40px;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 8px 32px rgba(31, 38, 135, 0.3);
+  text-align: center;
+  color: #fff;
+}
+
+/* ===== Logo ===== */
+.logoWrapper {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.logoCircle {
+  width: 70px;
+  height: 70px;
+  background: white;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #6b00b6;
+  font-weight: 700;
+  font-size: 26px;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.4);
+}
+
+.logoText {
+  letter-spacing: 1px;
+}
+
+/* ===== Title / Subtitle ===== */
+.title {
+  font-size: 28px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.subtitle {
+  font-size: 14px;
+  opacity: 0.8;
+  margin-bottom: 24px;
+}
+
+/* ===== Inputs ===== */
+.inputField {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-size: 15px;
+  outline: none;
+  margin-bottom: 14px;
+  transition: 0.3s;
+}
+
+.inputField::placeholder {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.inputField:focus {
+  background: rgba(255, 255, 255, 0.25);
+  border-color: #fff;
+}
+
+/* ===== Buttons ===== */
+.loginButton {
+  width: 100%;
+  padding: 12px;
+  background: white;
+  color: #6b00b6;
+  font-weight: 600;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: 0.3s;
+  margin-top: 5px;
+}
+
+.loginButton:hover {
+  background: #f2f2f2;
+}
+
+.lineButton {
+  width: 100%;
+  padding: 12px;
+  background: #06c755;
+  color: white;
+  font-weight: 600;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.lineButton:hover {
+  background: #05b24b;
+}
+
+/* ===== Text / Footer ===== */
+.loginNote {
+  margin-top: 20px;
+  font-size: 14px;
+  color: #eaeaea;
+}
+
+.footer {
+  position: absolute;
+  bottom: 15px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+  z-index: 3;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 480px) {
+  .glassCard {
+    padding: 30px 24px;
+  }
+
+  .title {
+    font-size: 24px;
+  }
+
+  .subtitle {
+    font-size: 13px;
+  }
+}

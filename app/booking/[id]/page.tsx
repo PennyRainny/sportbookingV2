@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { Header } from '@/components/Header';
 import { useBooking } from '@/contexts/BookingContext';
@@ -20,21 +20,45 @@ import styles from './booking.module.css';
 export default function BookingCalendarPage() {
   const router = useRouter();
   const params = useParams();
-  const id =
-    typeof params?.id === 'string'
-      ? params.id
-      : Array.isArray(params?.id)
-      ? params.id[0]
-      : '';
   const { facilities, addBooking } = useBooking();
   const { user } = useAuth();
 
+  const id = typeof params?.id === 'string' ? params.id : Array.isArray(params?.id) ? params.id[0] : '';
+
+  const [facility, setFacility] = useState<any>(null);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [selectedTime, setSelectedTime] = useState<string>('');
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
-  const facility = facilities.find((f) => f.id === id);
-  if (!facility || !user) return null;
+  // load facility safely
+  useEffect(() => {
+    if (facilities && id) {
+      const found = facilities.find((f) => f.id === id);
+      setFacility(found || null);
+    }
+  }, [facilities, id]);
+
+  if (!facility) {
+    return (
+      <div className={styles.pageWrapper}>
+        <Header />
+        <main className={styles.container}>
+          <p>Loading facility...</p>
+        </main>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className={styles.pageWrapper}>
+        <Header />
+        <main className={styles.container}>
+          <p>Loading user...</p>
+        </main>
+      </div>
+    );
+  }
 
   const handleConfirmBooking = () => {
     if (!selectedDate || !selectedTime) return;
@@ -90,17 +114,21 @@ export default function BookingCalendarPage() {
           <div className={styles.card}>
             <h2 className={styles.sectionTitle}>Select Time Slot</h2>
             <div className={styles.timeGrid}>
-              {facility.availableTimes.map((time) => (
-                <button
-                  key={time}
-                  onClick={() => setSelectedTime(time)}
-                  className={`${styles.timeSlot} ${
-                    selectedTime === time ? styles.timeSlotSelected : ''
-                  }`}
-                >
-                  {time}
-                </button>
-              ))}
+              {facility.availableTimes && facility.availableTimes.length > 0 ? (
+                facility.availableTimes.map((time: string) => (
+                  <button
+                    key={time}
+                    onClick={() => setSelectedTime(time)}
+                    className={`${styles.timeSlot} ${
+                      selectedTime === time ? styles.timeSlotSelected : ''
+                    }`}
+                  >
+                    {time}
+                  </button>
+                ))
+              ) : (
+                <p>No available time slots</p>
+              )}
             </div>
 
             <h2 className={styles.sectionTitle}>Booking Summary</h2>

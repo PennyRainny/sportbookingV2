@@ -1,5 +1,5 @@
 // /app/api/saveUser/route.js
-import { db } from "@/lib/firebase";
+import { auth, db, storage } from "@/lib/firebase";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 
 export async function POST(request) {

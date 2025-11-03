@@ -1,37 +1,38 @@
-"use client";
+'use client';
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, ChangeEvent } from "react";
 import { useRouter } from "next/navigation";
-import { db } from "@/lib/firebase";
-import { doc, getDoc } from "firebase/firestore";
+import { db, storage } from "@/lib/firebase";
+import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { getAuth } from "firebase/auth";
 import styles from "./profilePage.module.css";
 
 interface User {
-  lineId: string;
-  nameUser: string;
-  picture: string;
-  email?: string;
-  timeDateLogin?: any;
+  name: string;
+  email: string;
+  photoURL?: string;
 }
 
 export default function ProfilePage() {
   const router = useRouter();
+  const auth = getAuth();
+  const userId = auth.currentUser?.uid;
+
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-
-  const userId = "USER_LINE_ID"; // TODO: replace with actual session
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoURL, setPhotoURL] = useState<string>("");
 
   useEffect(() => {
+    if (!userId) return;
     const fetchUser = async () => {
       try {
         const docSnap = await getDoc(doc(db, "users", userId));
         if (docSnap.exists()) {
           const data = docSnap.data() as User;
           setUser(data);
-          setName(data.nameUser || "");
-          setEmail(data.email || "");
+          setPhotoURL(data.photoURL || "");
         }
       } catch (err) {
         console.error("Failed to fetch user:", err);
@@ -39,16 +40,32 @@ export default function ProfilePage() {
         setLoading(false);
       }
     };
-
     fetchUser();
   }, [userId]);
 
-  const handleSyncFromLine = () => {
-    alert("Data synced from LINE!");
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setPhotoFile(e.target.files[0]);
+    }
   };
 
-  const handleSave = () => {
-    alert("Profile updated!");
+  const handleUploadPhoto = async () => {
+    if (!photoFile || !userId) return;
+    try {
+      const photoRef = ref(storage, `profilePhotos/${userId}`);
+      await uploadBytes(photoRef, photoFile);
+      const downloadURL = await getDownloadURL(photoRef);
+      await setDoc(
+        doc(db, "users", userId),
+        { photoURL: downloadURL, updatedAt: serverTimestamp() },
+        { merge: true }
+      );
+      setPhotoURL(downloadURL);
+      alert("Profile picture updated!");
+    } catch (err) {
+      console.error("Failed to upload photo:", err);
+      alert("Failed to upload photo");
+    }
   };
 
   if (loading) return <p className={styles.status}>Loading...</p>;
@@ -58,8 +75,10 @@ export default function ProfilePage() {
       <header className={styles.header}>
         <span className={styles.logo}>SPU Sport Booking</span>
         <div className={styles.headerRight}>
-          <span className={styles.userLabel}>Student User</span>
-          <button className={styles.logoutButton}>Logout</button>
+          <span className={styles.userLabel}>{user?.name}</span>
+          <button onClick={() => router.push("/login")} className={styles.logoutButton}>
+            Logout
+          </button>
         </div>
       </header>
 
@@ -72,30 +91,36 @@ export default function ProfilePage() {
 
         <div className={styles.card}>
           <div className={styles.avatarWrapper}>
-            <img src={user?.picture} alt={user?.nameUser} className={styles.avatar} />
+            <img
+              src={photoURL || "/default-avatar.png"}
+              alt="Profile"
+              className={styles.avatar}
+            />
             <div className={styles.syncIcon}>🔄</div>
+          </div>
+
+          <div style={{ textAlign: "center", marginBottom: "16px" }}>
+            <input type="file" accept="image/*" onChange={handleFileChange} />
           </div>
 
           <div className={styles.field}>
             <label>Name</label>
-            <input value={name} disabled className={styles.input} />
+            <input value={user?.name || ""} disabled className={styles.input} />
           </div>
 
           <div className={styles.field}>
             <label>Email</label>
-            <input value={email} disabled className={styles.input} />
+            <input value={user?.email || ""} disabled className={styles.input} />
           </div>
 
           <div className={styles.buttonGroup}>
-            <button onClick={handleSyncFromLine} className={styles.syncButton}>
-              Sync Data From LINE
-            </button>
-            <button onClick={handleSave} className={styles.saveButton}>
+            <button className={styles.syncButton}>Sync Data from LINE</button>
+            <button onClick={handleUploadPhoto} className={styles.saveButton}>
               Save Changes
             </button>
           </div>
 
-          <div className={styles.footer}>Logged in via LINE Account</div>
+          <div className={styles.footer}>Logged in via LINE Account.</div>
         </div>
       </main>
     </div>
