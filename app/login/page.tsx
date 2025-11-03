@@ -11,7 +11,6 @@ export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuth();
 
-  // บันทึก user ลง Firebase
   const saveUserToFirebase = async (lineId: string, name: string) => {
     try {
       const res = await fetch("/api/saveUser", {
@@ -25,14 +24,13 @@ export default function LoginPage() {
     }
   };
 
-  // ดึง code จาก URL แล้วเรียก /api/linelogin
   useEffect(() => {
     const code = new URL(window.location.href).searchParams.get("code");
     if (code) {
       setLoading(true);
 
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 7000); // timeout 7s
+      const timeout = setTimeout(() => controller.abort(), 7000);
 
       fetch("/api/linelogin", {
         method: "POST",
@@ -60,15 +58,19 @@ export default function LoginPage() {
     }
   }, []);
 
+  const redirectToLINE = () => {
+    const clientId = process.env.NEXT_PUBLIC_LINE_CLIENT_ID!;
+    const redirectUri = encodeURIComponent(process.env.NEXT_PUBLIC_LINE_REDIRECT_URI!);
+    const state = "secure_random_state"; // หรือ generate แบบ random
+    const scope = "profile openid";
+
+    const lineUrl = `https://access.line.me/oauth2/v2.1/authorize?response_type=code&client_id=${clientId}&redirect_uri=${redirectUri}&state=${state}&scope=${scope}&prompt=login`;
+    window.location.href = lineUrl;
+  };
+
   return (
     <div className={styles.pageWrapper}>
-      <div
-        className={styles.bgBlur}
-        style={{
-          backgroundImage:
-            "url(https://images.unsplash.com/photo-1609134154058-860440f6f609?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzcG9ydHMlMjBmaWVsZCUyMHVuaXZlcnNpdHl8ZW58MXx8fHwxNzYyMDcwMDY4fDA&ixlib=rb-4.1.0&q=80&w=1080)",
-        }}
-      />
+      <div className={styles.bgBlur} style={{ backgroundImage: "url(...)" }} />
       <div className={styles.bgGradientOverlay} />
 
       <div className={styles.glassCard}>
@@ -81,9 +83,24 @@ export default function LoginPage() {
         <h1 className={styles.title}>SPU Sport Booking</h1>
         <p className={styles.subtitle}>Book your favorite sports field easily.</p>
 
-        <button className={styles.lineButton} disabled>
-          <Loader2 className={styles.loaderIcon} />
-          {loading ? "Connecting to LINE…" : "Waiting for LINE redirect…"}
+        <button
+          className={styles.lineButton}
+          onClick={redirectToLINE}
+          disabled={loading}
+        >
+          {loading ? (
+            <>
+              <Loader2 className={styles.loaderIcon} />
+              Connecting to LINE…
+            </>
+          ) : (
+            <>
+              <svg className={styles.lineIcon} viewBox="0 0 24 24" fill="currentColor">
+                <path d="M19.365 9.863c..." />
+              </svg>
+              Login with LINE
+            </>
+          )}
         </button>
 
         <p className={styles.loginNote}>Login via your LINE account to continue.</p>
