@@ -4,10 +4,7 @@ import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 
 export async function POST(req) {
   try {
-    console.time("Parse body");
     const { code } = await req.json();
-    console.timeEnd("Parse body");
-
     if (typeof code !== "string" || !code.trim()) {
       return NextResponse.json({ error: "Missing or invalid code" }, { status: 400 });
     }
@@ -16,15 +13,12 @@ export async function POST(req) {
     const clientSecret = process.env.LINE_CLIENT_SECRET;
     const redirectUri = process.env.LINE_REDIRECT_URI;
 
-    if (
-      typeof clientId !== "string" ||
-      typeof clientSecret !== "string" ||
-      typeof redirectUri !== "string"
-    ) {
+    if (!clientId || !clientSecret || !redirectUri) {
+      console.error("Missing LINE env:", { clientId, clientSecret, redirectUri });
       return NextResponse.json({ error: "Missing LINE environment variables" }, { status: 500 });
     }
 
-    console.time("Fetch LINE token");
+    // 🔐 Request access token
     const tokenRes = await fetch("https://api.line.me/oauth2/v2.1/token", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -36,37 +30,41 @@ export async function POST(req) {
         client_secret: clientSecret,
       }),
     });
-    console.timeEnd("Fetch LINE token");
 
-    console.time("Parse token response");
+    if (!tokenRes.ok) {
+      const errorText = await tokenRes.text();
+      console.error("LINE token error:", tokenRes.status, errorText);
+      return NextResponse.json({ error: "Token request failed" }, { status: tokenRes.status });
+    }
+
     const tokenData = await tokenRes.json();
-    console.timeEnd("Parse token response");
-
     const accessToken = tokenData?.access_token;
-    if (typeof accessToken !== "string" || !accessToken.trim()) {
+    if (!accessToken || typeof accessToken !== "string") {
+      console.error("Missing access token:", tokenData);
       return NextResponse.json({ error: "Failed to get access token" }, { status: 401 });
     }
 
-    console.time("Fetch LINE profile");
+    // 👤 Request profile
     const profileRes = await fetch("https://api.line.me/v2/profile", {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
-    console.timeEnd("Fetch LINE profile");
 
-    console.time("Parse profile response");
+    if (!profileRes.ok) {
+      const errorText = await profileRes.text();
+      console.error("LINE profile error:", profileRes.status, errorText);
+      return NextResponse.json({ error: "Profile request failed" }, { status: profileRes.status });
+    }
+
     const profile = await profileRes.json();
-    console.timeEnd("Parse profile response");
+    console.log("LINE profile raw:", profile);
 
     const { userId, displayName, pictureUrl } = profile;
-    if (
-      typeof userId !== "string" ||
-      typeof displayName !== "string" ||
-      typeof pictureUrl !== "string"
-    ) {
+    if (!userId || !displayName || !pictureUrl) {
+      console.error("Invalid profile data:", profile);
       return NextResponse.json({ error: "Invalid profile data" }, { status: 422 });
     }
 
-    console.time("Write to Firestore");
+    // 📝 Save to Firestore
     const safeUser = {
       lineId: userId,
       nameUser: displayName,
@@ -74,9 +72,8 @@ export async function POST(req) {
       timeDateLogin: serverTimestamp(),
     };
     await setDoc(doc(db, "users", userId), safeUser);
-    console.timeEnd("Write to Firestore");
 
-    return NextResponse.json(profile);
+    return NextResponse.json({ userId, displayName, pictureUrl });
   } catch (err) {
     console.error("LINE Login Error:", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
