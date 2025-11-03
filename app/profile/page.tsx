@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
-import styles from "./profile.module.css";
+import styles from "./profilePage.module.css";
 
 interface User {
   lineId: string;
