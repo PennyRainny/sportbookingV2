@@ -5,7 +5,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { BookingProvider } from "@/contexts/BookingContext";
 import { Toaster } from "@/components/ui/sonner";
 
-// ✅ ใช้ฟอนต์ Geist จาก public/fonts/Geist/otf
+// ✅ ฟอนต์ Geist จาก public/fonts/Geist/otf
 const geistSans = localFont({
   src: [
     { path: "/fonts/Geist/otf/Geist-Regular.otf", weight: "400" },
@@ -16,7 +16,7 @@ const geistSans = localFont({
   display: "swap",
 });
 
-// ✅ ใช้ฟอนต์ GeistMono จาก public/fonts/GeistMono/otf
+// ✅ ฟอนต์ GeistMono จาก public/fonts/GeistMono/otf
 const geistMono = localFont({
   src: [
     { path: "/fonts/GeistMono/otf/GeistMono-Regular.otf", weight: "400" },
