@@ -28,20 +28,25 @@ export default function BookingCalendarPage() {
       ? params.id[0]
       : '';
 
-  const [facility, setFacility] = useState<any>(null);
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
-  const [selectedTime, setSelectedTime] = useState<string>('');
+  const [facility, setFacility] = useState(null);
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [selectedTime, setSelectedTime] = useState('');
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const [loading, setLoading] = useState(false);
 
-  // ✅ โหลดข้อมูล facility จาก localStorage หรือ API (ในโปรเจกต์จริงอาจมาจาก Context)
+  // ✅ โหลดข้อมูลสนามจาก API
   useEffect(() => {
-    const storedFacilities = localStorage.getItem('facilities');
-    if (storedFacilities) {
-      const parsed = JSON.parse(storedFacilities);
-      const found = parsed.find((f: any) => f.id === id);
-      setFacility(found || null);
-    }
+    const fetchFacility = async () => {
+      try {
+        const res = await fetch(`/api/facility/${id}`);
+        if (!res.ok) throw new Error('Failed to load facility');
+        const data = await res.json();
+        setFacility(data);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    if (id) fetchFacility();
   }, [id]);
 
   if (!facility) {
@@ -66,19 +71,14 @@ export default function BookingCalendarPage() {
     );
   }
 
-  // ✅ ฟังก์ชันยืนยันการจอง (เรียก API)
+  // ✅ ฟังก์ชันจองสนาม (ยิง API จริง)
   const handleConfirmBooking = async () => {
-    if (!selectedDate || !selectedTime) return;
-
-    setLoading(true);
     try {
       const res = await fetch('/api/booking', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId: user.id,
+          userId: user.uid,
           facilityId: facility.id,
           facilityName: facility.name,
           facilityImage: facility.image,
@@ -88,28 +88,18 @@ export default function BookingCalendarPage() {
         }),
       });
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        alert(data.error || 'Booking failed');
-        setLoading(false);
-        return;
-      }
-
-      alert('✅ Booking created successfully!');
+      if (!res.ok) throw new Error('Booking failed');
       setShowConfirmDialog(false);
       router.push('/booking-success');
-    } catch (error) {
-      console.error('Error:', error);
-      alert('Something went wrong, please try again.');
-    } finally {
-      setLoading(false);
+    } catch (err) {
+      console.error('❌ Booking error:', err);
+      alert('จองไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
     }
   };
 
-  const formatDate = (date: Date | undefined) => {
+  const formatDate = (date) => {
     if (!date) return '';
-    return date.toLocaleDateString('en-US', {
+    return date.toLocaleDateString('th-TH', {
       weekday: 'long',
       year: 'numeric',
       month: 'long',
@@ -126,12 +116,13 @@ export default function BookingCalendarPage() {
           onClick={() => router.push(`/facility/${facility.id}`)}
         >
           <ArrowLeft width={16} height={16} />
-          <span>Back to Facility Details</span>
+          <span>กลับไปหน้ารายละเอียดสนาม</span>
         </div>
 
         <div className={styles.grid}>
+          {/* ปฏิทิน */}
           <div className={styles.card}>
-            <h2 className={styles.sectionTitle}>Select Date</h2>
+            <h2 className={styles.sectionTitle}>เลือกวันที่</h2>
             <Calendar
               mode="single"
               selected={selectedDate}
@@ -141,11 +132,12 @@ export default function BookingCalendarPage() {
             />
           </div>
 
+          {/* ช่องเวลา + สรุป */}
           <div className={styles.card}>
-            <h2 className={styles.sectionTitle}>Select Time Slot</h2>
+            <h2 className={styles.sectionTitle}>เลือกช่วงเวลา</h2>
             <div className={styles.timeGrid}>
-              {facility.availableTimes && facility.availableTimes.length > 0 ? (
-                facility.availableTimes.map((time: string) => (
+              {facility.availableTimes?.length ? (
+                facility.availableTimes.map((time) => (
                   <button
                     key={time}
                     onClick={() => setSelectedTime(time)}
@@ -157,53 +149,52 @@ export default function BookingCalendarPage() {
                   </button>
                 ))
               ) : (
-                <p>No available time slots</p>
+                <p>ไม่มีช่วงเวลาให้เลือก</p>
               )}
             </div>
 
-            <h2 className={styles.sectionTitle}>Booking Summary</h2>
+            <h2 className={styles.sectionTitle}>สรุปการจอง</h2>
             <div className={styles.summaryItem}>
               <MapPin width={20} height={20} color="#6B8AFF" />
               <div>
-                <p className={styles.label}>Field</p>
+                <p className={styles.label}>สนาม</p>
                 <p>{facility.name}</p>
               </div>
             </div>
             <div className={styles.summaryItem}>
               <CalendarIcon width={20} height={20} color="#6B8AFF" />
               <div>
-                <p className={styles.label}>Date</p>
-                <p>{selectedDate ? formatDate(selectedDate) : 'Not selected'}</p>
+                <p className={styles.label}>วันที่</p>
+                <p>{selectedDate ? formatDate(selectedDate) : 'ยังไม่ได้เลือก'}</p>
               </div>
             </div>
             <div className={styles.summaryItem}>
               <Clock width={20} height={20} color="#6B8AFF" />
               <div>
-                <p className={styles.label}>Time</p>
-                <p>{selectedTime || 'Not selected'}</p>
+                <p className={styles.label}>เวลา</p>
+                <p>{selectedTime || 'ยังไม่ได้เลือก'}</p>
               </div>
             </div>
 
             <Button
               onClick={() => setShowConfirmDialog(true)}
-              disabled={!selectedDate || !selectedTime || loading}
+              disabled={!selectedDate || !selectedTime}
               className={styles.confirmButton}
             >
-              {loading ? 'Processing...' : 'Confirm Booking'}
+              ยืนยันการจอง
             </Button>
           </div>
         </div>
       </main>
 
+      {/* กล่องยืนยัน */}
       <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
         <DialogContent className={styles.dialog}>
           <DialogHeader>
-            <DialogTitle className={styles.dialogTitle}>
-              Confirm Your Booking?
-            </DialogTitle>
-            <DialogDescription className={styles.dialogDescription}>
-              Are you sure you want to book <strong>{facility.name}</strong> on{' '}
-              {selectedDate ? formatDate(selectedDate) : ''} at {selectedTime}?
+            <DialogTitle>ยืนยันการจอง?</DialogTitle>
+            <DialogDescription>
+              คุณต้องการจอง <strong>{facility.name}</strong> วันที่{' '}
+              {formatDate(selectedDate)} เวลา {selectedTime} ใช่หรือไม่?
             </DialogDescription>
           </DialogHeader>
 
@@ -212,14 +203,13 @@ export default function BookingCalendarPage() {
               onClick={() => setShowConfirmDialog(false)}
               className={styles.dialogCancelButton}
             >
-              Cancel
+              ยกเลิก
             </button>
             <button
               onClick={handleConfirmBooking}
               className={styles.dialogConfirmButton}
-              disabled={loading}
             >
-              {loading ? 'Booking...' : 'Confirm'}
+              ยืนยัน
             </button>
           </div>
         </DialogContent>
