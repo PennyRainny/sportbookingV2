@@ -84,59 +84,49 @@ export default function BookingCalendarPage() {
 
   // ✅ ฟังก์ชันจอง (ติดต่อ Firestore โดยตรง)
   const handleConfirmBooking = async () => {
-    if (!selectedDate || !selectedTime) return;
-    setLoading(true);
+  if (!selectedDate || !selectedTime || !facility) return; // ✅ กัน null
+  setLoading(true);
 
-    try {
-      const bookingsRef = collection(db, 'bookings');
+  try {
+    const bookingsRef = collection(db, 'bookings');
 
-      // 🔍 ตรวจสอบว่าช่วงเวลานั้นถูกจองไปแล้วหรือยัง
-      const q = query(
-        bookingsRef,
-        where('facilityId', '==', facility.id),
-        where('date', '==', selectedDate.toISOString().split('T')[0]),
-        where('time', '==', selectedTime)
-      );
+    // 🔍 ตรวจสอบว่าช่วงเวลานั้นถูกจองไปแล้วหรือยัง
+    const q = query(
+      bookingsRef,
+      where('facilityId', '==', facility.id),
+      where('date', '==', selectedDate.toISOString().split('T')[0]),
+      where('time', '==', selectedTime)
+    );
 
-      const snapshot = await getDocs(q);
-      if (!snapshot.empty) {
-        alert('❌ เวลานี้ถูกจองแล้ว');
-        setLoading(false);
-        return;
-      }
-
-      // ✅ ถ้ายังว่าง → เพิ่มข้อมูลใหม่
-      await addDoc(bookingsRef, {
-        userId: user.uid,
-        facilityId: facility.id,
-        facilityName: facility.name,
-        facilityImage: facility.image,
-        date: selectedDate.toISOString().split('T')[0],
-        time: selectedTime,
-        status: 'pending',
-        createdAt: serverTimestamp(),
-      });
-
-      alert('✅ จองสำเร็จ!');
-      router.push('/booking-success');
-    } catch (err) {
-      console.error('Error creating booking:', err);
-      alert('เกิดข้อผิดพลาดในการจอง กรุณาลองใหม่อีกครั้ง');
-    } finally {
+    const snapshot = await getDocs(q);
+    if (!snapshot.empty) {
+      alert('❌ เวลานี้ถูกจองแล้ว');
       setLoading(false);
-      setShowConfirmDialog(false);
+      return;
     }
-  };
 
-  const formatDate = (date) => {
-    if (!date) return '';
-    return date.toLocaleDateString('th-TH', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
+    // ✅ ถ้ายังว่าง → เพิ่มข้อมูลใหม่
+    await addDoc(bookingsRef, {
+      userId: user.uid,
+      facilityId: facility.id,
+      facilityName: facility.name,
+      facilityImage: facility.image,
+      date: selectedDate.toISOString().split('T')[0],
+      time: selectedTime,
+      status: 'pending',
+      createdAt: serverTimestamp(),
     });
-  };
+
+    alert('✅ จองสำเร็จ!');
+    router.push('/booking-success');
+  } catch (err) {
+    console.error('Error creating booking:', err);
+    alert('เกิดข้อผิดพลาดในการจอง กรุณาลองใหม่อีกครั้ง');
+  } finally {
+    setLoading(false);
+    setShowConfirmDialog(false);
+  }
+};
 
   return (
     <div className={styles.pageWrapper}>
