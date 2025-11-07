@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { Header } from '@/components/Header';
-import { useBooking } from '@/contexts/BookingContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -20,23 +19,30 @@ import styles from './booking.module.css';
 export default function BookingCalendarPage() {
   const router = useRouter();
   const params = useParams();
-  const { facilities, addBooking } = useBooking();
   const { user } = useAuth();
 
-  const id = typeof params?.id === 'string' ? params.id : Array.isArray(params?.id) ? params.id[0] : '';
+  const id =
+    typeof params?.id === 'string'
+      ? params.id
+      : Array.isArray(params?.id)
+      ? params.id[0]
+      : '';
 
   const [facility, setFacility] = useState<any>(null);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [selectedTime, setSelectedTime] = useState<string>('');
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  // load facility safely
+  // ✅ โหลดข้อมูล facility จาก localStorage หรือ API (ในโปรเจกต์จริงอาจมาจาก Context)
   useEffect(() => {
-    if (facilities && id) {
-      const found = facilities.find((f) => f.id === id);
+    const storedFacilities = localStorage.getItem('facilities');
+    if (storedFacilities) {
+      const parsed = JSON.parse(storedFacilities);
+      const found = parsed.find((f: any) => f.id === id);
       setFacility(found || null);
     }
-  }, [facilities, id]);
+  }, [id]);
 
   if (!facility) {
     return (
@@ -60,21 +66,45 @@ export default function BookingCalendarPage() {
     );
   }
 
-  const handleConfirmBooking = () => {
+  // ✅ ฟังก์ชันยืนยันการจอง (เรียก API)
+  const handleConfirmBooking = async () => {
     if (!selectedDate || !selectedTime) return;
 
-    addBooking({
-      userId: user.id,
-      facilityId: facility.id,
-      facilityName: facility.name,
-      facilityImage: facility.image,
-      date: selectedDate.toISOString().split('T')[0],
-      time: selectedTime,
-      status: 'pending',
-    });
+    setLoading(true);
+    try {
+      const res = await fetch('/api/booking', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: user.id,
+          facilityId: facility.id,
+          facilityName: facility.name,
+          facilityImage: facility.image,
+          date: selectedDate.toISOString().split('T')[0],
+          time: selectedTime,
+          status: 'pending',
+        }),
+      });
 
-    setShowConfirmDialog(false);
-    router.push('/booking-success');
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data.error || 'Booking failed');
+        setLoading(false);
+        return;
+      }
+
+      alert('✅ Booking created successfully!');
+      setShowConfirmDialog(false);
+      router.push('/booking-success');
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Something went wrong, please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const formatDate = (date: Date | undefined) => {
@@ -156,10 +186,10 @@ export default function BookingCalendarPage() {
 
             <Button
               onClick={() => setShowConfirmDialog(true)}
-              disabled={!selectedDate || !selectedTime}
+              disabled={!selectedDate || !selectedTime || loading}
               className={styles.confirmButton}
             >
-              Confirm Booking
+              {loading ? 'Processing...' : 'Confirm Booking'}
             </Button>
           </div>
         </div>
@@ -187,8 +217,9 @@ export default function BookingCalendarPage() {
             <button
               onClick={handleConfirmBooking}
               className={styles.dialogConfirmButton}
+              disabled={loading}
             >
-              Confirm
+              {loading ? 'Booking...' : 'Confirm'}
             </button>
           </div>
         </DialogContent>
