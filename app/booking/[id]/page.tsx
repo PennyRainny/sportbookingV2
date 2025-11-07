@@ -80,8 +80,7 @@ export default function BookingCalendarPage() {
       facilityImage: facility.image,
       date: selectedDate.toISOString().split('T')[0],
       time: selectedTime,
-      status: 'pending',
-      createdAt: serverTimestamp(),
+      status: 'pending' as const,
     };
 
     try {
