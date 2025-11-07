@@ -16,6 +16,17 @@ import {
 } from '@/components/ui/dialog';
 import styles from './booking.module.css';
 
+// ✅ import Firestore
+import { db } from '@/lib/firebase';
+import {
+  collection,
+  addDoc,
+  getDocs,
+  query,
+  where,
+  serverTimestamp,
+} from 'firebase/firestore';
+
 export default function BookingCalendarPage() {
   const router = useRouter();
   const params = useParams();
@@ -32,12 +43,13 @@ export default function BookingCalendarPage() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedTime, setSelectedTime] = useState('');
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  // ✅ โหลดข้อมูลสนามจาก API
+  // ✅ โหลดข้อมูลสนามจาก Firestore (สมมติว่ามี collection "facilities")
   useEffect(() => {
     const fetchFacility = async () => {
       try {
-        const res = await fetch(`/api/facility/${id}`);
+        const res = await fetch(`/api/facility/${id}`); // ถ้ายังใช้ API ดึงสนามได้ปกติ
         if (!res.ok) throw new Error('Failed to load facility');
         const data = await res.json();
         setFacility(data);
@@ -45,7 +57,6 @@ export default function BookingCalendarPage() {
         console.error(err);
       }
     };
-
     if (id) fetchFacility();
   }, [id]);
 
@@ -71,29 +82,49 @@ export default function BookingCalendarPage() {
     );
   }
 
-  // ✅ ฟังก์ชันจองสนาม (ยิง API จริง)
+  // ✅ ฟังก์ชันจอง (ติดต่อ Firestore โดยตรง)
   const handleConfirmBooking = async () => {
+    if (!selectedDate || !selectedTime) return;
+    setLoading(true);
+
     try {
-      const res = await fetch('/api/booking', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: user.uid,
-          facilityId: facility.id,
-          facilityName: facility.name,
-          facilityImage: facility.image,
-          date: selectedDate.toISOString().split('T')[0],
-          time: selectedTime,
-          status: 'pending',
-        }),
+      const bookingsRef = collection(db, 'bookings');
+
+      // 🔍 ตรวจสอบว่าช่วงเวลานั้นถูกจองไปแล้วหรือยัง
+      const q = query(
+        bookingsRef,
+        where('facilityId', '==', facility.id),
+        where('date', '==', selectedDate.toISOString().split('T')[0]),
+        where('time', '==', selectedTime)
+      );
+
+      const snapshot = await getDocs(q);
+      if (!snapshot.empty) {
+        alert('❌ เวลานี้ถูกจองแล้ว');
+        setLoading(false);
+        return;
+      }
+
+      // ✅ ถ้ายังว่าง → เพิ่มข้อมูลใหม่
+      await addDoc(bookingsRef, {
+        userId: user.uid,
+        facilityId: facility.id,
+        facilityName: facility.name,
+        facilityImage: facility.image,
+        date: selectedDate.toISOString().split('T')[0],
+        time: selectedTime,
+        status: 'pending',
+        createdAt: serverTimestamp(),
       });
 
-      if (!res.ok) throw new Error('Booking failed');
-      setShowConfirmDialog(false);
+      alert('✅ จองสำเร็จ!');
       router.push('/booking-success');
     } catch (err) {
-      console.error('❌ Booking error:', err);
-      alert('จองไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
+      console.error('Error creating booking:', err);
+      alert('เกิดข้อผิดพลาดในการจอง กรุณาลองใหม่อีกครั้ง');
+    } finally {
+      setLoading(false);
+      setShowConfirmDialog(false);
     }
   };
 
@@ -178,10 +209,10 @@ export default function BookingCalendarPage() {
 
             <Button
               onClick={() => setShowConfirmDialog(true)}
-              disabled={!selectedDate || !selectedTime}
+              disabled={!selectedDate || !selectedTime || loading}
               className={styles.confirmButton}
             >
-              ยืนยันการจอง
+              {loading ? 'กำลังจอง...' : 'ยืนยันการจอง'}
             </Button>
           </div>
         </div>
@@ -208,8 +239,9 @@ export default function BookingCalendarPage() {
             <button
               onClick={handleConfirmBooking}
               className={styles.dialogConfirmButton}
+              disabled={loading}
             >
-              ยืนยัน
+              {loading ? 'กำลังจอง...' : 'ยืนยัน'}
             </button>
           </div>
         </DialogContent>
