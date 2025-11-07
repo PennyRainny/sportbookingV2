@@ -1,43 +1,71 @@
 // /app/api/booking/route.js
 
 import { db } from "@/lib/firebase";
-import { collection, addDoc, getDocs, query, where, serverTimestamp } from "firebase/firestore";
+import {
+  collection,
+  addDoc,
+  getDocs,
+  query,
+  where,
+  serverTimestamp,
+} from "firebase/firestore";
 
 // ✅ สร้างการจองใหม่
 export async function POST(request) {
   try {
-    const { userId, fieldName, date, timeSlot } = await request.json();
+    const {
+      userId,
+      facilityId,
+      facilityName,
+      facilityImage,
+      date,
+      time,
+      status,
+    } = await request.json();
 
-    if (!userId || !fieldName || !date || !timeSlot) {
-      return new Response(JSON.stringify({ error: "Missing required fields" }), { status: 400 });
+    // ✅ ตรวจสอบค่าที่จำเป็น
+    if (!userId || !facilityId || !facilityName || !date || !time) {
+      return new Response(
+        JSON.stringify({ error: "Missing required fields" }),
+        { status: 400 }
+      );
     }
 
-    // เพิ่มข้อมูลใหม่ใน Firestore
-    const bookingCheck = collection(db, "bookings");
+    const bookingsRef = collection(db, "bookings");
+
+    // ✅ ตรวจสอบว่าช่วงเวลานั้นถูกจองไปแล้วหรือยัง
     const checkQuery = query(
-      bookingCheck,
-      where("fieldName", "==", fieldName),
+      bookingsRef,
+      where("facilityId", "==", facilityId),
       where("date", "==", date),
-      where("timeSlot", "==", timeSlot),
+      where("time", "==", time)
     );
 
-    const haveBooking = await getDocs(checkQuery);
+    const snapshot = await getDocs(checkQuery);
 
-    if(!haveBooking.empty){
-      return new Response(JSON.stringify({ error: "This time slot is has booked" }), { status: 400 });
-    };
+    if (!snapshot.empty) {
+      return new Response(
+        JSON.stringify({ error: "This time slot is already booked" }),
+        { status: 400 }
+      );
+    }
 
+    // ✅ เพิ่มข้อมูลใหม่ลง Firestore
+    await addDoc(bookingsRef, {
+      userId,
+      facilityId,
+      facilityName,
+      facilityImage,
+      date,
+      time,
+      status: status || "pending",
+      createdAt: serverTimestamp(),
+    });
 
-  await addDoc(bookingCheck, {
-    userId,
-    fieldName,
-    data,
-    timeSlot,
-    status: "pending",
-    createTime: serverTimestamp(),
-  
-  });
-     return new Response(JSON.stringify({ error: "Booking Created Successfully" }), { status: 400 });
+    return new Response(
+      JSON.stringify({ message: "Booking Created Successfully" }),
+      { status: 201 }
+    );
   } catch (error) {
     console.error("Error creating booking:", error);
     return new Response(
@@ -46,7 +74,6 @@ export async function POST(request) {
     );
   }
 }
-    
 
 // ✅ ดึงรายการจองทั้งหมด หรือกรองตาม userId
 export async function GET(request) {
@@ -56,7 +83,6 @@ export async function GET(request) {
 
     const bookingsRef = collection(db, "bookings");
 
-    // ถ้ามี userId → ดึงเฉพาะของคนนั้น
     const q = userId
       ? query(bookingsRef, where("userId", "==", userId))
       : query(bookingsRef);
